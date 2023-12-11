@@ -1,6 +1,56 @@
 # STM32(interupt)
 ```
-while (1)
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int val = 1;
+//int flag = 0;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  val = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
+//  val += 1;
+//  if(val++ > 4) val = 0; // val 0~5
+//  flag = !flag;
+}
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_USART2_UART_Init();
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  //int i = 0;
+  //int flag = 1;
+  while (1)
   {
     /* USER CODE END WHILE */
 
