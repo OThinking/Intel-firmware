@@ -1,6 +1,6 @@
 # Intel-firmware
 ## STM32(interupt)
-...
+```
 while (1)
   {
     /* USER CODE END WHILE */
@@ -22,6 +22,6 @@ while (1)
       //}
      }
   }
-...
+```
 ### Intel-firmware
 #### Intel-firmware
