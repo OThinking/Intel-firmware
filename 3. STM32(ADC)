@@ -1,56 +1,67 @@
 #STM32(ADC)
 ```
 ADC(Analog-to-digital-converter)
- 정의: 연속적인 analog 신호를 0과 1로 digital 신호로 변환하는 칩이다
+ 정의: 연속적인 analog 신호를 0과 1로 구성된 digital 신호로 변환하는 IC(Integrated Circuit-반도체로 만든 전자회로의 집합)칩이다
+ 변환과정: 표본화(Sampling) -> 양자화(Quantization) -> 부호화(Encoding)
+  1) Sampling: 아날로그 신호를 일정 간격으로 샘플을 추출하여 값으로 변환시키는 과정
+  2) Quantization: 샘플된 진폭치를 특정 대표값으로 바꾸는 과정 => 정보량을 무한정 늘리지 않기 위해
+  3) Encoding: 디지털 코드 형태로 변환하는 과정
  특징
-  -연속적인 신호 ex) 음파
   -아날로그가 처음부터 오류를 내포하고 있기에 아날로그와 디지털은 서로 완벽하게 변환이 일어나기는 힘들다.
-  -아날로그 신호를 샘플링을 해서 디지털 신호로 변환해줄때 범위를 보통 12bit로 표현을 한다 따라서 0~4095까지로 설정할 수 있고
-  이는 아날로그와 가장 근사하다
+  -아날로그 신호를 샘플링을 해서 디지털 신호로 변환해줄때 범위를 보통 12bit로 표현을 한다. 따라서 0~4095까지로 설정할 수 있고 이는 아날로그와 가장 근사하다.
   -아날로그의 신호의 범위는 보통 5v 또는 3.3v까지이며 이를 넘어서면 조치를 해줘야한다
-  -하나씩 순차적으로 처리를 한다 / 동시에 병렬로 체널을 처리할 수 없다
-  -동작모드: 수동모드(반자동모드)- / 
-  -연속모드(자동모드)-인터럽트모드-읽어올 수 있는 파형으로 디지털로 변환을 했을때 실행됨
-  -DMA: 컨트롤러가 값을 설정되어있는 일정한 메모리에 저장을하고 이를 CPU로 가지고 오는 방식
+  -하나씩 순차적으로 처리를 한다 / 동시에 병렬로 채널을 처리할 수 없다
+  -동작모드:
+   1) 수동모드(반자동모드): Singel conversion모드-사용자가 원하는 시기에 컨버젼을 열어준다라는 의미
+   2) 연속모드(자동모드): interrupt 모드-읽어올 수 있는 파형으로 디지털로 변환을 했을때 실행됨
+   3) DMA: 컨트롤러가 값을 설정되어있는 일정한 메모리에 저장을하고 이를 CPU로 가지고 오는 방식
+
  JOYSTICK활용
-   핀 설정: GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7)
-   이중에서 X / Y 두개는 볼륨이라고 하며 가변저항이다
-   3.3V를 사용하는 이유는 정확한 측정을 위해서 이고 5V로 사용하면 뒤에 값이 일정 값으로 유지가 된다
+  -핀 설정: GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7)
+  -X / Y 두개는 가변저항이고 Z는 스위치이다.
+  -3.3V를 사용하는 이유: 정확한 측정을 위해서 / 5V로 사용하면 뒤에 값이 일정 값으로 유지가 된다
 ```
-```
+
 ADC설정(Singel conversion모드 설정)-사용자가 원하는 시기에 컨버젼을 열어준다라는 의미
-Analog -> ADC1 -> IN0, IN1 체크(A0-PA0와 A1-PA1을 사용하기에) -> Scan Conversion Mode(Enabled) -> Discontinuous Conversion Mode(Enabled)
-다음과 같이 설정하면 Rank에 Channel이 Channel 0으로 설정되어있고 a0와 연결되어있는 값을 읽겠다는 의미이다
+ Analog -> ADC1 -> IN0, IN1 체크(A0-PA0와 A1-PA1을 사용하기에) -> Scan Conversion Mode(Enabled) -> Discontinuous Conversion Mode(Enabled)
+ 다음과 같이 설정하면 Rank에 Channel이 Channel 0으로 설정되어있고 a0와 연결되어있는 값을 읽겠다는 의미이다
 
 uart2 설정
+```
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int __io_putchar(int c)
 {
-  HAL_UART_Transmit(&huart2, &c, 1, 10);
+  HAL_UART_Transmit(&huart2, &c, 1, 10); // UART2에 버퍼 C를 읽고 크기는 1
   return c;
 }
 /* USER CODE END 0 */
+```
 
 내 라이브러리에 있는 함수를 호출하는 방법
+```
 /* USER CODE BEGIN PV */
 #include "../../../myLib/myLib.c"
 /* USER CODE END PV */
+```
 
 ADC 실행 방법
+```
  while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_ADC_Start(&hadc1); // 1bit씩 쉬프트가 되고 오른쪽으로 정렬이되고 왼쪽에는 더미를 채워서 16bit만들어라는 의미 // start sampling
-    HAL_ADC_PollForConversion(&hadc1, 100); // waiting함수(끝날때까지 기다려라) // wait
-    int val = HAL_ADC_GetValue(&hadc1); // 값을 읽어오는 함수 // Get
+    HAL_ADC_Start(&hadc1); // start sampling // 1bit씩 쉬프트가 되고 오른쪽으로 정렬이되고 왼쪽에는 더미를 채워서 16bit만들어라는 의미
+    HAL_ADC_PollForConversion(&hadc1, 100); // wait // waiting함수(끝날때까지 기다려라)
+    int val = HAL_ADC_GetValue(&hadc1); // Get // 값을 읽어오는 함수 -> 읽어온 값을 val에 저장
   }
   /* USER CODE END 3 */
+```
 
-ioc설정 추가: ADC_Regular_ConversionMode 에서 Number of Conversion의 값을 2로 바꾸면 Rank가 하나 더 추가 되는 것을 알 수 있다.
-아래 코드를 돌리면 x의 값과 y의 값을 순차적으로 출력을 해준다
+ioc설정 추가(x와 y값을 순차적으로 출력해주기 위해)
+ -ADC_Regular_ConversionMode 에서 Number of Conversion의 값을 2로 바꾸면 Rank가 하나 더 추가 되는 것을 알 수 있다.
+```
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int GetAdcValue()
@@ -71,10 +82,12 @@ while (1)
     HAL_Delay(500);
   }
   /* USER CODE END 3 */
+```
 
-z(스위치)설정 D7과 연결되어있는 PA8을 GPIO_INPUT으로 설정
-Zaxis으로 이름 변경
-ioc -> GPIO -> PA8 -> GPIO Pull-up/Pull-down을 Pull-up으로 설정 그러면 누르면 0 때면 1인것을 확인 할 수 있다
+Z값을 읽어오는 방법
+ -z D7과 연결되어있는 PA8을 GPIO_INPUT으로 설정 -> Zaxis으로 이름 변경
+ -> ioc -> GPIO -> PA8 -> GPIO Pull-up/Pull-down -> Pull-up설정: 누르면 0 때면 1인것을 확인 할 수 있다
+```
 while (1)
   {
     /* USER CODE END WHILE */
@@ -86,24 +99,18 @@ while (1)
     HAL_Delay(500);
   }
   /* USER CODE END 3 */
+```
 
 인터럽트 방식을 통한 ADC설정 - 컨버젼이 발생을 했을때 즉 읽어올수 있는 파동으로 변형이 됬을때의 시점
-ioc -> ADC1 -> NVUC Settings -> 체크
-callback함수를 찾기위해서는 it.c파일을 열어준다 ctrl 왼쪽클릭을 타고 함수에 접근한다
-callback함수를 메인점씨에 정의해주면 샘플링된 값이 이미 디지털값으로 바껴서 값을 가지고오기만 하면된다
+ -ioc -> ADC1 -> NVUC Settings -> 체크
+ -callback함수를 찾기위해서는 it.c파일을 열어준다 ctrl 왼쪽클릭을 타고 함수에 접근한다
+ -callback함수를 main.c에 정의해주면 샘플링된 값이 이미 디지털값으로 바껴서 값을 가지고오기만 하면된다
+```
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//int GetAdcValue()
-//{
-//  HAL_ADC_Start(&hadc1);
-//  HAL_ADC_PollForConversion(&hadc1, 100);
-//  int val = HAL_ADC_GetValue(&hadc1);
-//  return val;
-//}
 int xValue = -1;
 int yValue = -1;
 int n = 0;
-void noOperation(){}
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 1 time
 {
   int Value = HAL_ADC_GetValue(&hadc1);
@@ -118,8 +125,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 1 time
     printf("Y Value: %d\r\n",yValue);
     printf("Z Value: %d\r\n\n",HAL_GPIO_ReadPin(Zaxis_GPIO_Port, Zaxis_Pin));
   }
-  for(int i=0; i<1000000; i++) noOperation();
-//  HAL_ADC_Start_IT(&hadc1);
 }
 /* USER CODE END 0 */
 while (1)
@@ -127,25 +132,25 @@ while (1)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//    printf("X Value: %d\r\n",xValue);
-//    printf("Y Value: %d\r\n",yValue);
-//    printf("Z Value: %d\r\n\n",HAL_GPIO_ReadPin(Zaxis_GPIO_Port, Zaxis_Pin));
     HAL_ADC_Start_IT(&hadc1);
     HAL_Delay(500);
   }
   /* USER CODE END 3 */
+```
 
-myDelay를 사용하는 방법 ???????????????????????????
+myDelay를 사용
+ -interrupt방식을 사용한 위에서 callback함수에 HAL_Delay를 사용할 수 없다.
 
 DMA(Direct Memory Access)방식 활용
-CPU에 ADC의 값을 계속 쏴줘서 CPU가 다른 행동을 못하기에 ADC에서 메모리에 쏴라고 명령을 하는 것이 DMA방식이다
-ioc -> ADC1 -> DMA Settings -> ADC1클릭 여기서 Direction은 값이 하나 밖에 없고 장치에서 메모리로 쏴준다는 것이고 uart에서는 양뱡향통신을 고를 수 있다
--> Mode Circular 체크 메모리가 컨트롤러에서 읽어온 값을 계속 저장을 하다가 다 차게되면 다시 처음으로 되돌아가도록 설정을 하는것 값을 normal로 설정할시 오버플로우가 일어난다 따라서 해결해줄려면 초기화를 시켜줘야한다
--> Data Width -> Half Word(16bit를 의미)
--> Parameter Settings -> DMA Continuous Requests설정 -> End Of Conversion Selection -> all Conversions설정
--> External Trigger Conversion Source -> Timer3 Trigger Out event설정 -> 밑에는 falling edge로 설정
--> TIM3 -> Internal Clock -> 2Hz로 설정 -> Trigger Event Selection -> Upadate Event설정
--> dma를 제외한 인터럽트는 제거한다 adc1에서 인터럽트 체크해제
+ -정의: CPU로 ADC의 값을 계속 쏴주게되면 CPU가 계속 읽어오기만 해야하므로 다른 행동을 못한다. 따라서 ADC에서 메모리에 쏴라고 명령을 하는 것이 DMA방식이다
+ -설정: ioc -> ADC1 -> DMA Settings -> ADC1클릭 여기서 Direction은 값이 하나 밖에 없고 장치에서 메모리로 쏴준다는 것을 의미 / uart에서는 양뱡향통신을 고를 수 있다
+      -> Mode Circular 체크: 메모리가 컨트롤러에서 읽어온 값을 계속 저장을 하다가 다 차게되면 다시 처음으로 되돌아가도록 설정을 하는것 / normal로 설정할시 오버플로우가 일어난다 따라서 해결해줄려면 초기화를 시켜줘야한다
+      -> Data Width -> Half Word(16bit를 의미)
+      -> Parameter Settings -> DMA Continuous Requests설정 -> End Of Conversion Selection -> all Conversions설정
+      -> External Trigger Conversion Source -> Timer3 Trigger Out event설정 -> 밑에는 falling edge로 설정
+      -> TIM3 -> Internal Clock -> 2Hz로 설정 -> Trigger Event Selection -> Upadate Event설정
+      -> dma를 제외한 인터럽트는 제거한다 adc1에서 인터럽트 체크해제
+```
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 short dValue[2];
