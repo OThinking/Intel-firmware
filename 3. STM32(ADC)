@@ -13,7 +13,7 @@ ADC(Analog-to-digital-converter)
   -연속모드(자동모드)-인터럽트모드-읽어올 수 있는 파형으로 디지털로 변환을 했을때 실행됨
   -DMA: 컨트롤러가 값을 설정되어있는 일정한 메모리에 저장을하고 이를 CPU로 가지고 오는 방식
  JOYSTICK활용
-   핀에는 GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7-s/w)
+   핀 설정: GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7)
    이중에서 X / Y 두개는 볼륨이라고 하며 가변저항이다
    3.3V를 사용하는 이유는 정확한 측정을 위해서 이고 5V로 사용하면 뒤에 값이 일정 값으로 유지가 된다
 ```
@@ -68,6 +68,21 @@ while (1)
     /* USER CODE BEGIN 3 */
     printf("X Value: %d\r\n",GetAdcValue());
     printf("Y Value: %d\r\n",GetAdcValue());
+    HAL_Delay(500);
+  }
+  /* USER CODE END 3 */
+
+z(스위치)설정 D7과 연결되어있는 PA8을 GPIO_INPUT으로 설정
+Zaxis으로 이름 변경
+ioc -> GPIO -> PA8 -> GPIO Pull-up/Pull-down을 Pull-up으로 설정 그러면 누르면 0 때면 1인것을 확인 할 수 있다
+while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    printf("X Value: %d\r\n",GetAdcValue());
+    printf("Y Value: %d\r\n",GetAdcValue());
+    printf("Z Value: %d\r\n\n",HAL_GPIO_ReadPin(Zaxis_GPIO_Port, Zaxis_Pin));
     HAL_Delay(500);
   }
   /* USER CODE END 3 */
