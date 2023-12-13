@@ -21,7 +21,6 @@ ADC(Analog-to-digital-converter)
 ADC설정(Singel conversion모드 설정)-사용자가 원하는 시기에 컨버젼을 열어준다라는 의미
 Analog -> ADC1 -> IN0, IN1 체크(A0-PA0와 A1-PA1을 사용하기에) -> Scan Conversion Mode(Enabled) -> Discontinuous Conversion Mode(Enabled)
 다음과 같이 설정하면 Rank에 Channel이 Channel 0으로 설정되어있고 a0와 연결되어있는 값을 읽겠다는 의미이다
-ADC_Regular_ConversionMode 에서 Number of Conversion의 값을 2로 바꾸면 Rank가 하나 더 추가 되는 것을 알 수 있다.
 
 uart2 설정
 /* Private user code ---------------------------------------------------------*/
@@ -44,9 +43,32 @@ ADC 실행 방법
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_ADC_Start(&hadc1); // 1bit씩 쉬프트가 되고 오른쪽으로 정렬이되고 왼쪽에는 더미를 채워서 16bit만들어라는 의미
-    HAL_ADC_PollForConversion(&hadc1, 100); // waiting함수(끝날때까지 기다려라)
-    HAL_ADC_GetValue(&hadc1); // 값을 읽어오는 함수
+    HAL_ADC_Start(&hadc1); // 1bit씩 쉬프트가 되고 오른쪽으로 정렬이되고 왼쪽에는 더미를 채워서 16bit만들어라는 의미 // start sampling
+    HAL_ADC_PollForConversion(&hadc1, 100); // waiting함수(끝날때까지 기다려라) // wait
+    int val = HAL_ADC_GetValue(&hadc1); // 값을 읽어오는 함수 // Get
+  }
+  /* USER CODE END 3 */
+
+ioc설정 추가: ADC_Regular_ConversionMode 에서 Number of Conversion의 값을 2로 바꾸면 Rank가 하나 더 추가 되는 것을 알 수 있다.
+아래 코드를 돌리면 x의 값과 y의 값을 순차적으로 출력을 해준다
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int GetAdcValue()
+{
+  HAL_ADC_Start(&hadc1);
+  HAL_ADC_PollForConversion(&hadc1, 100);
+  int val = HAL_ADC_GetValue(&hadc1);
+  return val;
+}
+/* USER CODE END 0 */
+while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    printf("X Value: %d\r\n",GetAdcValue());
+    printf("Y Value: %d\r\n",GetAdcValue());
+    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 
