@@ -1,4 +1,4 @@
-#STM32()
+#STM32(ADC)
 ```
 ADC(Analog-to-digital-converter)
 -연속적인 신호 ex) 음파
