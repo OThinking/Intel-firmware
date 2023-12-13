@@ -1,22 +1,54 @@
 #STM32(ADC)
 ```
 ADC(Analog-to-digital-converter)
--연속적인 신호 ex) 음파
--아날로그가 처음부터 오류를 내포하고 있기에 아날로그와 디지털은 서로 완벽하게 변환이 일어나기는 힘들다.
--아날로그 신호를 샘플링을 해서 디지털 신호로 변환해줄때 범위를 보통 12bit로 표현을 한다 따라서 0~4095까지로 설정할 수 있고
-이는 아날로그와 가장 근사하다
--아날로그의 신호의 범위는 보통 5v 또는 3.3v까지이며 이를 넘어서면 조치를 해줘야한다
--하나씩 순차적으로 처리를 한다 / 동시에 병렬로 체널을 처리할 수 없다
--동작모드: 수동모드(반자동모드)- / 
--연속모드(자동모드)-인터럽트모드-읽어올 수 있는 파형으로 디지털로 변환을 했을때 실행됨
--DMA: 컨트롤러가 값을 설정되어있는 일정한 메모리에 저장을하고 이를 CPU로 가지고 오는 방식
-JOYSTICK활용
-핀에는 GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7-s/w)
-이중에서 X / Y 두개는 볼륨이라고 하며 가변저항이다
-3.3V를 사용하는 이유는 정확한 측정을 위해서 이고 5V로 사용하면 뒤에 값이 일정 값으로 유지가 된다
+ 정의: 연속적인 analog 신호를 0과 1로 digital 신호로 변환하는 칩이다
+ 특징
+  -연속적인 신호 ex) 음파
+  -아날로그가 처음부터 오류를 내포하고 있기에 아날로그와 디지털은 서로 완벽하게 변환이 일어나기는 힘들다.
+  -아날로그 신호를 샘플링을 해서 디지털 신호로 변환해줄때 범위를 보통 12bit로 표현을 한다 따라서 0~4095까지로 설정할 수 있고
+  이는 아날로그와 가장 근사하다
+  -아날로그의 신호의 범위는 보통 5v 또는 3.3v까지이며 이를 넘어서면 조치를 해줘야한다
+  -하나씩 순차적으로 처리를 한다 / 동시에 병렬로 체널을 처리할 수 없다
+  -동작모드: 수동모드(반자동모드)- / 
+  -연속모드(자동모드)-인터럽트모드-읽어올 수 있는 파형으로 디지털로 변환을 했을때 실행됨
+  -DMA: 컨트롤러가 값을 설정되어있는 일정한 메모리에 저장을하고 이를 CPU로 가지고 오는 방식
+ JOYSTICK활용
+   핀에는 GND / VCC(3.3v) / X(A0) / Y(A1) / Z(D7-s/w)
+   이중에서 X / Y 두개는 볼륨이라고 하며 가변저항이다
+   3.3V를 사용하는 이유는 정확한 측정을 위해서 이고 5V로 사용하면 뒤에 값이 일정 값으로 유지가 된다
 ```
 ```
-ADC호출
+ADC설정(Singel conversion모드 설정)-사용자가 원하는 시기에 컨버젼을 열어준다라는 의미
+Analog -> ADC1 -> IN0, IN1 체크(A0-PA0와 A1-PA1을 사용하기에) -> Scan Conversion Mode(Enabled) -> Discontinuous Conversion Mode(Enabled)
+다음과 같이 설정하면 Rank에 Channel이 Channel 0으로 설정되어있고 a0와 연결되어있는 값을 읽겠다는 의미이다
+ADC_Regular_ConversionMode 에서 Number of Conversion의 값을 2로 바꾸면 Rank가 하나 더 추가 되는 것을 알 수 있다.
+
+uart2 설정
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int __io_putchar(int c)
+{
+  HAL_UART_Transmit(&huart2, &c, 1, 10);
+  return c;
+}
+/* USER CODE END 0 */
+
+내 라이브러리에 있는 함수를 호출하는 방법
+/* USER CODE BEGIN PV */
+#include "../../../myLib/myLib.c"
+/* USER CODE END PV */
+
+ADC 실행 방법
+ while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    HAL_ADC_Start(&hadc1); // 1bit씩 쉬프트가 되고 오른쪽으로 정렬이되고 왼쪽에는 더미를 채워서 16bit만들어라는 의미
+    HAL_ADC_PollForConversion(&hadc1, 100); // waiting함수(끝날때까지 기다려라)
+    HAL_ADC_GetValue(&hadc1); // 값을 읽어오는 함수
+  }
+  /* USER CODE END 3 */
 
 DMA방식 활용
 ```
