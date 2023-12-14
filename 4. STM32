@@ -1,1 +1,20 @@
-STM32
+STM32(FreeRTOS)
+
+ADC복습
+ -STM32에는 하나의 adc가 있기에 16개의 채널을 처리할 때 임의의 시점에서 하나의 채널만 샘플링하고 처리 할 수 밖에 없다.
+ -인터럽트 모드는 1회성이기에 다시 start interrupt를 해줘야한다
+ -DMA방식은 일부지정된 타이머를 사용을 해야지 엣지 트리거를 통해 값을 메모리에 쌓아두면 읽어 올 수 있다
+
+RTOS(real time operating system-실시간 운영 체제) - 일종의 firmware이고 s/w이다
+ -주로 임베디드 시스템에서 사용하고 원하는 시간안에 작업이 완료되서 결과를 반환을 한다는 의미를 내포하고 있다.
+ -가장 큰 목적: 시간준수가 가장 큰 목적
+ -구분 
+  1) Hard Real Time: 특정 작업을 일정 시간안에 반드시 처리해야한는 시스템 ex-군사장비, 의료장비
+  2) Soft Real Time: 특정 작업에 대한 시간 제약이 있지만 그렇지 못하더라도 큰 영향이 없는 시스템 ex-세탁기, TV
+ -종류: vxWorks, FreeRTOS(공짜)
+ -반대되는 개념: GPOS(General Purpose Operating System)
+  1) 차이점
+   (1) GPOS는 다양한 목적을 시간상관없이 수행하고 처리하지만 RTOS는 특정 목적을 시간내 처리를 위한 것이다
+   (2)
+   (3) RTOS에 비해 무겁고 크기가 크다
+  2) 종류: Linux, Windows
