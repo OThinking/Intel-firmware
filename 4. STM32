@@ -15,6 +15,143 @@ RTOS(real time operating system-실시간 운영 체제) - 일종의 firmware이
  -반대되는 개념: GPOS(General Purpose Operating System)
   1) 차이점
    (1) GPOS는 다양한 목적을 시간상관없이 수행하고 처리하지만 RTOS는 특정 목적을 시간내 처리를 위한 것이다
-   (2)
+   (2) 높은 처리량 우선 스케줄링
    (3) RTOS에 비해 무겁고 크기가 크다
   2) 종류: Linux, Windows
+ -Task: 만약에 excel ppt internet을 켜놓고 실행을 할때 서로의 독립적인 각각을 의미한다.
+ -STM32 칩은 싱글코어이다 따라서 여러개의 프로그램이 있을때 동시에 실행할 수 있는 것이 아니라 순차적으로 프로세스를 수행해준다
+
+ioc설정
+ -Middleware and Software Packs -> FREERTOS -> CMSIS_V1설정 -> Tasks and Queues
+ -> Tasks Add클릭 -> 변경하지 않고 기본값으로 설정(Priority에서 우선순위를 정할 수 있다-real time부터 ide까지 우선순위를 정할 수 있다.)
+ -> 기본값으로 하나 더 설정
+ -> SYS -> Timebase Source -> TIM11 설정(우선순위를 정하고 순차적으로 실행을 하라고 타이머에서 관리해준다)
+ -> FREERTOS -> Advanced settings -> USE_NEWLIB_REENTRANT -> Enabled 설정
+ -회로설정: D2-PA10 / D7-PA8 / D8-PA9 => GPIO OUTPUT으로 변경 / 이름 LD r y g로 변경
+ -참고: for(;;) == while(1) 서로 같은 의미이다
+```
+int main(void)
+{
+  /* USER CODE BEGIN 2 */
+  printf("\033[2J\033[1;1HRTOS Test Program Started...\r\n");
+  /* USER CODE END 2 */
+
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of myTask02 */
+  osThreadDef(myTask02, StartTask02, osPriorityNormal, 0, 128);
+  myTask02Handle = osThreadCreate(osThread(myTask02), NULL);
+
+  /* definition and creation of myTask03 */
+  osThreadDef(myTask03, StartTask03, osPriorityIdle, 0, 128);
+  myTask03Handle = osThreadCreate(osThread(myTask03), NULL);
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* USER CODE BEGIN WHILE */
+  int n = 0;
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    printf("in Main procedure...%d\r\n",n++);
+    HAL_GPIO_TogglePin(LDr_GPIO_Port, LDr_Pin);
+    HAL_GPIO_TogglePin(LDg_GPIO_Port, LDg_Pin);
+    HAL_GPIO_TogglePin(LDy_GPIO_Port, LDy_Pin);
+    HAL_Delay(1000);
+  }
+  /* USER CODE END 3 */
+}
+
+void StartDefaultTask(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  int n = 0;
+  for(;;)
+  {
+    printf("\033[3;1Hin default Task...%d\r\n", n++);
+
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+void StartTask02(void const * argument)
+{
+  /* USER CODE BEGIN StartTask02 */
+  /* Infinite loop */
+  int n = 0;
+  for(;;)
+  {
+    printf("\033[5;1Hin Task02...%d\r\n", n++);
+    osDelay(1);
+  }
+  /* USER CODE END StartTask02 */
+}
+
+void StartTask03(void const * argument)
+{
+  /* USER CODE BEGIN StartTask03 */
+  /* Infinite loop */
+  int n = 0;
+  for(;;)
+  {
+    printf("\033[7;1Hin Task03...%d\r\n", n++);
+    osDelay(1);
+  }
+  /* USER CODE END StartTask03 */
+}
+```
+위 코드 중
+    osDelay(1); // 1미리세컨드 간격으로 startDefaultTask 프로세스를 쉬라고하는 것이다 따라서 적절한 시간을 설정을 해줘야지 다음 우선순위의 프로세르를 동작하게 만들 수 있다.
+만약에 HAL_Delay를 사용할 시 해당 프로세스에서 멈춰있어서 다른 프로세스로 넘어가지 않는다
+즉 osDelay를 사용해야지 내 프로세스는 멈춰있으면서 그사이에 다른 프로세로 넘어가는 것이 가능하다
+
+Semaphore 설정
+FREEPTOS -> Timers and Semaphores -> Binary Semaphores Add
+NVIC -> EXTI line[15:10] interrupts 체크
+```
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  osSemaphoreRelease(myBinarySem01Handle);
+}
+/* USER CODE END 0 */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of myBinarySem01 */
+  osSemaphoreDef(myBinarySem01);
+  myBinarySem01Handle = osSemaphoreCreate(osSemaphore(myBinarySem01), 1);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+void StartTask01(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  int n = 0;
+  for(;;)
+  {
+    if(osSemaphoreWait(myBinarySem01Handle, 10) == osOK)
+    {
+      printf("\033[3;1Hin default Task...%d\r\n", n++);
+      HAL_GPIO_WritePin(LDr_GPIO_Port, LDr_Pin, 1);
+      HAL_Delay(100);
+      HAL_GPIO_WritePin(LDr_GPIO_Port, LDr_Pin, 0);
+      HAL_Delay(100);
+      osSemaphoreRelease(myBinarySem01Handle);
+    }
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+```
