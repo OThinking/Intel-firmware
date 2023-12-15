@@ -72,3 +72,10 @@ int main(void)
      }
   }
 ```
+
+bluetooth연결
+ -설정: USART1 -> Mode -> Asynchronous 설정 -> Parameter Settings -> Baud Rate 9600설정 -> 인럽트도 설정
+ -> tim3 인터럽트 1hz만들어주기
+```
+
+```
