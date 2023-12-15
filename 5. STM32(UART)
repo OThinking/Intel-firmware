@@ -1,1 +1,244 @@
 STM32(UART)
+
+UART(Universal asynchronous receiver/transmitter)
+ -정의: 병렬 데이터의 형태를 직렬 방식으로 전환하여 데이터를 전송하는 컴퓨터 하드웨어의 일종이다.
+ -raspberry는 Ethernet으로 통신을 하고 STM32는 UART로 통신을 한다.
+ -baudrate(보레이트)에 따라서 T1bit간격으로 Sampling된 값을 데이터로 수신한다.
+ -timeout 전송이 시간이 초과되면 시간 초과 오류가 반환된다. 이러한 상황이 일어나면 통신이 끊겼다고 판단을 한다.
+ -방식
+  1)Polling 방식: CPU는 지속적으로 IO 장치를 쿼리하고 장치의 요구사항을 처리한다. 이 방식은 CPU 시간을 차지할 수 있으므로 비효율적인 방식이다.
+  2)인터럽트 방식
+  3)DMA 방식
+ -기타
+  1)blocking: 호출된 함수가 자신의 작업을 모두 마칠 때까지 호출한 함수에게 제어권을 넘겨주지 않고 대기
+  2)non-blocking: 바로 return해서 호출한 함수에게 제어권을 넘겨주고 호출한 함수가 다른 일을 할 수 있는 기회를 준다
+  3)Tx: 송신 / Rx: 수신
+
+uart설정
+ -새로운 stm32project생성 후 바로 generation
+ -putty를 이용하여 2를 누르면 ok가 뜨고 끝
+```
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int __io_putchar(int ch) // printf
+{
+  HAL_UART_Transmit(&huart2, &ch, 1, 10);
+  return ch;
+}
+int __io_getchar(void) // scanf
+{
+  int ch = 0;
+  while(1)
+  {
+    HAL_StatusTypeDef r = HAL_UART_Receive(&huart2, &ch, 1, 10);
+    if(r == HAL_OK) break;
+  }
+  HAL_UART_Transmit(&huart2, &ch, 1, 10);
+  return ch;
+}
+int scanfEx1(int *k)
+{
+  unsigned char buf[10], c;
+  int idx = 0;
+
+  while(1)
+  {
+    c = __io_getchar();
+    if(c == 0x0d) break; // enter키가 눌러질때까지 버퍼 공간에 입력받은 값을 넣겠다
+    buf[idx++] = c;
+  }
+  buf[idx] = 0;
+  *k = atoi(buf);
+  return 1;
+}
+/* USER CODE END 0 */
+/* USER CODE BEGIN 2 */
+  int k = 0;
+  printf("\033[2J\033[1;1HUART Program Started...\r\n");
+  while(1)
+  {
+    printf("Input '2' Key to start\r\n");
+    scanfEx1(&k);
+    if(k == 2) break;
+  }
+  printf("OK...\r\n");
+  /* USER CODE END 2 */
+```
+ -참고
+  1) big endian: ㅁㅁㅁㅁ 255값이 들어와서 16진수로 표현을하면 제일 뒤에 FF가 들어가게 된다
+  2) little endian: ㅁㅁㅁㅁ 255값이 들어와서 16진수로 표현을하면 제일 앞에 FF가 들어가게 된다 / STM32는 little endian을 사용한다
+
+숫자 이외의 값이 들어오면 오류메세지 출력 하는 예제
+```
+int scanfEx1(int *k)
+{
+  unsigned char buf[10], c;
+  int idx = 0;
+
+  while(1)
+  {
+    c = __io_getchar();
+    if(c == 0x0d) break;
+    if(c < '0' || c > '9')
+    {
+      printf("\rinput soo ");
+      break;
+    }
+    if(idx > 9)
+    {
+      printf("\rtoo long ");
+      break;
+    }
+    buf[idx++] = c;
+  }
+  buf[idx] = 0;
+  *k = atoi(buf);
+  return 1;
+}
+/* USER CODE END 0 */
+```
+
+LED RED GREEN YELLOW 키고 끄기 예제
+```
+int GetKey(){
+  return __io_getchar();
+}
+/* USER CODE END 0 */
+
+  /* USER CODE BEGIN 2 */
+  int k = 0;
+  printf("\033[2J\033[1;1HUART Program Started...\r\n");
+  while(1)
+  {
+    printf("Input 'r' or 'g' or 'y' Key\r\n");
+//    scanfEx1(&k);
+    int k = GetKey();
+    if(k == 'r')
+    {
+      printf("RED LED ON");
+      HAL_GPIO_WritePin(LDr_GPIO_Port, LDr_Pin, 1);
+      HAL_GPIO_WritePin(LDg_GPIO_Port, LDg_Pin, 0);
+      HAL_GPIO_WritePin(LDy_GPIO_Port, LDy_Pin, 0);
+    }
+    if(k == 'y')
+    {
+      printf("YELLOW LED ON");
+      HAL_GPIO_WritePin(LDr_GPIO_Port, LDr_Pin, 0);
+      HAL_GPIO_WritePin(LDg_GPIO_Port, LDg_Pin, 0);
+      HAL_GPIO_WritePin(LDy_GPIO_Port, LDy_Pin, 1);
+    }
+    if(k == 'g')
+    {
+      printf("GREEN LED ON");
+      HAL_GPIO_WritePin(LDr_GPIO_Port, LDr_Pin, 0);
+      HAL_GPIO_WritePin(LDg_GPIO_Port, LDg_Pin, 1);
+      HAL_GPIO_WritePin(LDy_GPIO_Port, LDy_Pin, 0);
+    }
+  }
+  /* USER CODE END 2 */
+```
+
+인터럽트 방식
+ -추가 설정: USART2 -> NVIC Settings 체크
+ -아래와 같이 코드를 작성하면 1초동안에 키보드에 친 값이 출력이 된다
+```
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+char rxBuf[1024], rx;
+int rxIdx = 0;
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  rxBuf[rxIdx++] = rx;
+  HAL_UART_Receive_IT(&huart2, &rx, 1);
+}
+/* USER CODE END 0 */
+
+  /* USER CODE BEGIN 2 */
+  int k = 0;
+  printf("\033[2J\033[1;1HUART Program Started...\r\n");
+
+  HAL_UART_Receive_IT(&huart2, &rx, 1);
+  /* USER CODE END 2 */
+
+while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    if(rxIdx)
+    {
+      rxBuf[rxIdx] = 0;
+      printf("[Received String] %s\r\n", rxBuf);
+      rxIdx = 0;
+    }
+    HAL_Delay(1000);
+  }
+  /* USER CODE END 3 */
+```
+
+DMA방식
+ -추가 설정: USART2 -> DMA Settings -> Add -> USART2_RX설정 -> Mode Circular 설정
+ -> NVIC -> USART2 global interrupt 체크 없애기
+```
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int __io_putchar(int ch) // printf
+{
+  HAL_UART_Transmit(&huart2, &ch, 1, 10);
+  return ch;
+}
+int __io_getchar(void) // scanf
+{
+  int ch = 0;
+  while(1)
+  {
+    HAL_StatusTypeDef r = HAL_UART_Receive(&huart2, &ch, 1, 10);
+    if(r == HAL_OK) break;
+  }
+char rxBuf[RX_BUF_SIZE], rx;
+char dmaBuf[RX_BUF_SIZE];
+int head = 0, tail = 0;
+int rxIdx = 0;
+char *GetDmaData()
+{
+  int len = 0;
+  tail = RX_BUF_SIZE - huart2.hdmarx->Instance->NDTR;
+  
+  if(head == tail) return 0;
+  if(tail > head)
+  {
+    memcpy(dmaBuf, rxBuf + head, tail - head); len = tail - head;
+  }
+  else
+  {
+    memcpy(dmaBuf, rxBuf + head, RX_BUF_SIZE - head);
+    memcpy(dmaBuf + RX_BUF_SIZE - head, rxBuf, tail);
+    len = RX_BUF_SIZE - head + tail;
+  }
+  dmaBuf[len] = 0;
+  head = tail;
+  return dmaBuf;
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  rxBuf[rxIdx++] = rx;
+  HAL_UART_Receive_IT(&huart2, &rx, 1);
+}
+/* USER CODE END 0 */
+
+ while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    char *str = GetDmaData(); // str = 0, if no data
+    if(str)
+    {
+      rxBuf[rxIdx] = 0;
+      printf("[Received String] %s\r\n", str);
+    }
+    HAL_Delay(1000);
+  }
+  /* USER CODE END 3 */
+```
+huart2.hdmarx->Instance->NDTR; => 버퍼공간에서 남아있는 공간을 의미한다
