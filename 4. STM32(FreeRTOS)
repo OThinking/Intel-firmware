@@ -109,9 +109,9 @@ void StartTask03(void const * argument)
 }
 ```
 위 코드 중
-    osDelay(1); // 1미리세컨드 간격으로 startDefaultTask 프로세스를 쉬라고하는 것이다 따라서 적절한 시간을 설정을 해줘야지 다음 우선순위의 프로세르를 동작하게 만들 수 있다.
-만약에 HAL_Delay를 사용할 시 해당 프로세스에서 멈춰있어서 다른 프로세스로 넘어가지 않는다
-즉 osDelay를 사용해야지 내 프로세스는 멈춰있으면서 그사이에 다른 프로세로 넘어가는 것이 가능하다
+ -osDelay(1); // 1미리세컨드 간격으로 startDefaultTask 프로세스를 쉬라고하는 것이다 따라서 적절한 시간을 설정을 해줘야지 다음 우선순위의 프로세르를 동작하게 만들 수 있다.
+ -만약에 HAL_Delay를 사용할 시 해당 프로세스에서 멈춰있어서 다른 프로세스로 넘어가지 않는다
+ -즉 osDelay를 사용해야지 내 프로세스는 멈춰있으면서 그사이에 다른 프로세로 넘어가는 것이 가능하다
 
 Semaphore 설정
 FREEPTOS -> Timers and Semaphores -> Binary Semaphores Add
